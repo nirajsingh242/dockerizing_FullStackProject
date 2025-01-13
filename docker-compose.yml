@@ -1,0 +1,54 @@
+services:
+  # Spring Boot Backend Service
+  backend:
+    build:
+      context: ./crude  # Path to the backend directory
+    ports:
+      - "8080:8080"  # Expose backend on port 8080
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev  # Optional, set to prod for production environment
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/emsdb  # Database URL using the 'postgres' service name
+      - SPRING_DATASOURCE_USERNAME=root  # Database username
+      - SPRING_DATASOURCE_PASSWORD=root  # Database password
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update  # Hibernate auto DDL management
+    depends_on:
+      - postgres  # Ensure PostgreSQL is started before the backend
+    networks:
+      - app-network
+
+  # React Frontend Service
+  frontend:
+    build:
+      context: ./ems-frontend  # Path to the frontend directory
+      args:
+        - VITE_API_URL=http://localhost:8080/api/v1  # Set the backend API URL using the 'backend' service name
+    ports:
+      - "3000:80"  # Expose frontend on port 3000
+    depends_on:
+      - backend  # Ensure frontend starts after backend
+    networks:
+      - app-network
+
+  # PostgreSQL Database Service
+  postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: emsdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+# Define the network for inter-service communication
+networks:
+  app-network:
+    driver: bridge
+
+# Define persistent storage volumes for PostgreSQL
+volumes:
+  postgres-data:
+    driver: local
