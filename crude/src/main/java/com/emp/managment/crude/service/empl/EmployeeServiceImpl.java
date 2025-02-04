@@ -8,6 +8,8 @@ import com.emp.managment.crude.service.EmployeeService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.config.ConfigDataResourceNotFoundException;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -36,12 +38,20 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
+    @Cacheable(value = "employeeCache", key = "#id")//if wnat refer argument key = "#root.args[0]"
     public EmployeeDto getEmployeeById(Long id) {
+        System.out.println("Fetching employee from database: " + id);
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         Employee emp=empRepo.getById(id);
         return EmployeeMapper.maptoEmployeeDto(emp!=null?emp:new Employee());
     }
 
     @Override
+    @CacheEvict(value = "employeeCache", key = "#id") // Clears cache when employee is updated
     public EmployeeDto updateEmployee(Long id, EmployeeDto updatedEmp) {
     Employee result=empRepo.findById(id).orElseThrow(()->new RuntimeException("resource not found"));
 
